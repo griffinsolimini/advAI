@@ -1,0 +1,156 @@
+import math
+
+class Node:
+    def __init__(self):
+        self.entries = []
+    
+    def entropy(self):
+        num_apples = 0
+        num_setters = 0
+        for entry in self.entries:
+            if entry.attr["game"] == "ApplesToApples":
+                num_apples += 1
+            elif entry.attr["game"] == "SettersOfCatan":
+                num_setters += 1
+        ratio_a = float(num_apples) / len(self.entries) 
+        ratio_s = float(num_setters) / len(self.entries)
+
+        return -ratio_a * math.log(ratio_a, 2) - ratio_s * math.log(ratio_s, 2)
+    
+    def split(self, question):
+        children = []
+        for attribute in attribute_map[question]:
+            child = Node()
+            for entry in self.entries:
+                if entry.attr[question] == attribute:
+                    child.entries.append(entry)
+            children.append(child)
+
+        return children
+
+    def calculate_entropy(self, category):
+        category_map = {}
+        total = 0
+        for entry in self.entries:
+            value = entry.attr[category]
+            if value in category_map:
+                category_map[value]["count"] += 1
+                game = entry.attr["game"]
+                if game in category_map[value]:
+                    category_map[value][game] += 1
+                else:
+                    category_map[value][game] = 1
+                total += 1
+            else:
+                category_map[value] = {}
+                category_map[value]["count"] = 1
+                category_map[value][entry.attr["game"]] = 1
+                total += 1
+        
+        entropy = 0
+        for category in category_map:
+            x = category_map[category]
+            
+            setters_ratio = float(x["SettersOfCatan"]) / x["count"]
+            apples_ratio = float(x["ApplesToApples"]) / x["count"]
+            
+            entropy += (float(x["count"]) / total)*(-setters_ratio * math.log(setters_ratio, 2))
+            entropy += (float(x["count"]) / total)*(-apples_ratio * math.log(apples_ratio, 2))
+       
+        return entropy
+
+
+class Entry:
+    def __init__(self, dayOfWeek, timeOfDay, 
+            timeToPlay, mood, friendsVisiting, 
+            kidsPlaying, atHome, snacks, game):
+        
+        self.attr = {}
+        self.attr["dayOfWeek"] = dayOfWeek
+        self.attr["timeOfDay"] = timeOfDay
+        self.attr["timeToPlay"] = timeToPlay
+        self.attr["mood"] = mood
+        self.attr["friendsVisiting"] = friendsVisiting
+        self.attr["kidsPlaying"] = kidsPlaying
+        self.attr["atHome"] = atHome
+        self.attr["snacks"] = snacks
+        self.attr["game"] = game
+
+def calculate_entropy(entries, category):
+    category_map = {}
+    total = 0
+    for entry in entries:
+        value = entry.attr[category]
+        if value in category_map:
+            category_map[value]["count"] += 1
+            game = entry.attr["game"]
+            if game in category_map[value]:
+                category_map[value][game] += 1
+            else:
+                category_map[value][game] = 1
+            total += 1
+        else:
+            category_map[value] = {}
+            category_map[value]["count"] = 1
+            category_map[value][entry.attr["game"]] = 1
+            total += 1
+    
+    entropy = 0
+    for category in category_map:
+        x = category_map[category]
+        
+        setters_ratio = float(x["SettersOfCatan"]) / x["count"]
+        apples_ratio = float(x["ApplesToApples"]) / x["count"]
+        
+        entropy += (float(x["count"]) / total)*(-setters_ratio * math.log(setters_ratio, 2))
+        entropy += (float(x["count"]) / total)*(-apples_ratio * math.log(apples_ratio, 2))
+   
+    return entropy
+
+attribute_file = open('game_attributes.txt', 'r')
+
+attribute_map = {}
+for line in attribute_file:
+    attribute = line.split(':')
+    
+    tmp = []
+    for token in attribute[1].split(','):
+        tmp.append(token.strip())
+    attribute_map[attribute[0]] = tmp
+
+attribute_file.close()
+
+training_file = open('game_attrdata_train.dat', 'r')
+
+entries = []
+node = Node()
+
+for line in training_file:
+    tmp = line.strip().split(',')
+    entry = Entry(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7], tmp[8])
+    entries.append(entry)
+    node.entries.append(entry)
+
+training_file.close()
+
+print node.entropy()
+
+maximum_gain = 0
+category = None
+for key in attribute_map:
+    if key != 'game':
+        gain = node.entropy() - calculate_entropy(entries, key)
+        if gain > maximum_gain:
+            maximum_gain = gain
+            category = key
+
+print calculate_entropy(entries, "mood")
+print node.calculate_entropy("mood")
+
+newEntropy = 0
+for child in node.split("mood"):
+    print child.entropy()
+
+#  print category
+#  print maximum_gain
+

@@ -1,0 +1,8 @@
+As the number of means increases from k = 2 up until k = 12, the mean of the error steadily
+decreases for each new mean added to the clustering. The error stabilizes once the number 
+of means reaches around k = 12 or k = 15. The standard deviation increases from k = 2 to 
+k = 5, and then decreases until k = 15, where it stabilizes. This shows that increasing the 
+number of means increases your accuracy of classification, but only to a certain threshold, 
+at which point the extra computation time required to compute k-means with additional means 
+is not worth the difference in classification error.
+
